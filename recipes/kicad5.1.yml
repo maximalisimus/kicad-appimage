@@ -1,0 +1,59 @@
+# Might be necessary to bundle Python - to be investigated
+
+app: KiCad
+binpatch: true
+
+ingredients:
+  packages:
+    - libgio2.0-cil-dev
+    - libglew2.1
+    - libglib2.0-0
+    - libcurl3
+    - kicad
+    - kicad-doc
+    - kicad-i18n
+    - kicad-library-all
+    - kicad-library-footprints
+    - kicad-library-symbols
+    - kicad-library-templates
+    - # kicad-library-packages3d
+  dist: xenial
+  sources:
+    - deb http://archive.ubuntu.com/ubuntu/ xenial main universe
+  ppas:
+    - kicad/kicad-5.1-releases
+
+script:
+  - # Workaround until
+  - # AppRun.c exports rather than just sets environment variables
+  - cat > ./AppRun <<\EOF
+  - #!/bin/sh
+  - HERE="$(dirname "$(readlink -f "${0}")")"
+  - export KICAD_SYMBOL_DIR="${HERE}"/usr/share/kicad/library/
+  - export KICAD_TEMPLATE_DIR="${HERE}"/usr/share/kicad/template/
+  - export KISYSMOD="${HERE}"/usr/share/kicad/modules/
+  - # export KISYS3DMOD="${HERE}"/usr/share/kicad/modules/packages3d
+  - export LD_LIBRARY_PATH="${HERE}"/usr/lib/x86_64-linux-gnu/:"${HERE}"/lib/x86_64-linux-gnu/:"${HERE}"/usr/lib/:"${HERE}"/lib/:$LD_LIBRARY_PATH
+  - cd "${HERE}/usr"
+  - exec "./bin/kicad" "$@"
+  - EOF
+  - chmod a+x ./AppRun
+  - cat > ./kicad.desktop <<\EOF
+  - [Desktop Entry]
+  - Version=1.0
+  - Terminal=false
+  - Icon=kicad
+  - Type=Application
+  - Categories=Development;Electronics;
+  - Exec=./AppRun %f
+  - MimeType=application/x-kicad-project;
+  - Name=KiCad
+  - GenericName=EDA Suite
+  - GenericName[it]=CAD elettronico
+  - Comment=Electronic Design Automation suite
+  - Comment[fr]=Suite logicielle de conception électronique
+  - Comment[it]=Suite di progettazione circuiti elettronici
+  - X-Desktop-File-Install-Version=0.22
+  - X-AppImage-Version=5.1.4.glibc2.27
+  - EOF
+  - chmod a+x ./kicad.desktop
